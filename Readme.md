@@ -95,7 +95,7 @@ RESOURCES
 
 ## Tareas Ansible
 
-Las tareas en la forma de enviar comandos adhoc a las máquinas del inventario. La sintaxis:
+Las tareas, en Ansible, son la forma de enviar comandos adhoc a las máquinas del inventario. La sintaxis:
 
 ```
 $ ansible <options> <host-pattern>
@@ -158,7 +158,7 @@ non-zero return code
 
 ### Recursos
 
-- Comando ansible: https://docs.ansible.com/ansible/latest/cli/ansible.html
+- Comandos ansible: https://docs.ansible.com/ansible/latest/cli/ansible.html
 - índice de módulos de ansible: https://docs.ansible.com/ansible/latest/modules/modules_by_category.html
 
 
@@ -171,7 +171,7 @@ Permiten crear infraestructura como código y gestionar la configuración.
 Las tareas se ejecutan en el orden establecido y pueden ejecutarse de forma síncrona o asíncrona
 
 Utilizan sintasis Yaml
-Están compuesto por uno o más plays, cuyo objetivo es realizar alguna tarea, mediant eun módulo ansible, en los host detallados en el inventario.
+Están compuesto por uno o más plays, cuyo objetivo es realizar alguna tarea, mediante un módulo ansible, en los host detallados en el inventario.
 Por ejemplo, el comando:
 
 ```
@@ -240,7 +240,7 @@ $ ansible-playbook ping.yml
         service: name=httpd state=started enabled=yes
 ```
 
-- Instanlación y configuración de la APlicación
+- Instanlación y configuración de la Aplicación
 
 ```
 # setup-app.yml
@@ -473,7 +473,7 @@ https://docs.ansible.com/ansible/latest/user_guide/playbooks_reuse_roles.html
 
 Los roles permiten cargar automáticamente ciertos vars_files, tareas y handlers y este agrupamiento por roles permite compartirlos con otros usuarios.
 
-Partiendo de este estructura:
+Partiendo de esta estructura:
 
 ```
 site.yml
