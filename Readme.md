@@ -1,5 +1,6 @@
 ## Ansible
 
+
 ### Crear un fichero de inventario: hosts-dev
 
 ```
@@ -182,10 +183,11 @@ En un playbook sería:
 ```
 # ping.yml
 ---
-  - hosts: all
-    task:
-    - name: Ping a todos los servidores
-      action: ping
+- name: Ping all servers
+  hosts: all
+  tasks:
+  - name: Ping a todos los servidores
+    action: ping
 ```
 
 Para ejecutar un playbook se utiliza el comando:
@@ -206,11 +208,12 @@ $ ansible-playbook ping.yml
 # yum-update.yml
 
 ---
-  - hosts: webservers:loadbalancer
-    become: true
-    tasks:
-      - name: Updating yum packages
-        yum: name=* state=latest
+- name: Update web a loadbalances
+  hosts: webservers:loadbalancer
+  become: true
+  tasks:
+  - name: Updating yum packages
+    yum: name=* state=latest
 ```
 
 - Gestionar servicios
@@ -219,25 +222,27 @@ $ ansible-playbook ping.yml
 # install-services.yml
 
 ---
-  - hosts: loadbalancer
-    become: true
-    tasks:
-      - name: Installing apache
-        yum: name=httpd state=present
-      - name: Ensure apache starts
-        service: name=httpd state=started enabled=yes
+- name: Install Apache on loadbalancer
+  hosts: loadbalancer
+  become: true
+  tasks:
+  - name: Installing apache
+    yum: name=httpd state=present
+  - name: Ensure apache starts
+    service: name=httpd state=started enabled=yes
 
-  - hosts: webservers
-    become: true
-    tasks:
-      - name: Installing services
-        yum:
-          name: 
-            - httpd
-            - php
-          state: present
-      - name: Ensure apache starts
-        service: name=httpd state=started enabled=yes
+- name: Install Apache and PHP on WebServers
+  hosts: webservers
+  become: true
+  tasks:
+  - name: Installing services
+    yum:
+      name: 
+      - httpd
+      - php
+      state: present
+  - name: Ensure apache starts
+    service: name=httpd state=started enabled=yes
 ```
 
 - Instanlación y configuración de la Aplicación
@@ -246,23 +251,24 @@ $ ansible-playbook ping.yml
 # setup-app.yml
 
 ---
-  - hosts: webservers
-    become: true
-    tasks:
-      - name: Upload application file
-        copy:
-          src: app/index.php
-          dest: /var/www/html
-          mode: 0755
+- name: Upload App and Confgure PHP
+  hosts: webservers
+  become: true
+  tasks:
+  - name: Upload application file
+    copy:
+      src: app/index.php
+      dest: /var/www/html
+      mode: 0755
       
-      - name: Configure php.ini file
-        lineinfile:
-          path: /etc/php.ini
-          regexp: ^short_open_tag
-          line: 'short_open_tag=On'
+  - name: Configure php.ini file
+    lineinfile:
+      path: /etc/php.ini
+      regexp: ^short_open_tag
+      line: 'short_open_tag=On'
 
-      - name: restart apache
-        service: name=httpd state=restarted
+  - name: restart apache
+    service: name=httpd state=restarted
 ```
 
 Es posible definir un handler para que apache se restaure si hay algún cambio en la configuración:
@@ -271,24 +277,26 @@ Es posible definir un handler para que apache se restaure si hay algún cambio e
 # setup-app.yml
 
 ---
-  - hosts: webservers
-    become: true
-    tasks:
-      - name: Upload application file
-        copy:
-          src: app/index.php
-          dest: /var/www/html
-          mode: 0755
+- name: Upload App and Confgure PHP
+  hosts: webservers
+  become: true
+  tasks:
+  - name: Upload application file
+    copy:
+      src: app/index.php
+      dest: /var/www/html
+      mode: 0755
       
-      - name: Configure php.ini file
-        lineinfile:
-          path: /etc/php.ini
-          regexp: ^short_open_tag
-          line: 'short_open_tag=On'
-        notify: restart apache
-    handlers:
-      - name: restart apache
-        service: name=httpd state=restarted
+  - name: Configure php.ini file
+    lineinfile:
+      path: /etc/php.ini
+      regexp: ^short_open_tag
+      line: 'short_open_tag=On'
+      notify: restart apache
+  
+  handlers:
+  - name: restart apache
+    service: name=httpd state=restarted
 ```
 
 - Configuración del balanceador
@@ -296,23 +304,24 @@ Es posible definir un handler para que apache se restaure si hay algún cambio e
 ```
   # setup-lb.yml
 ---
-  - hosts: loadbalancer
-    become: true
-    tasks:
-      - name: Creating template
-        template:
-          src: config/lb-config.j2
-          dest:  /etc/httpd/conf.d/lb.conf
-          owner: bin
-          group: wheel
-          mode: 064
-        notify: restart httpd
+- name: Configure loadbalancer
+  hosts: loadbalancer
+  become: true
+  tasks:
+  - name: Creating template
+    template:
+      src: config/lb-config.j2
+      dest:  /etc/httpd/conf.d/lb.conf
+      owner: bin
+      group: wheel
+      mode: 064
+    notify: restart httpd
     
-    handlers:
-      - name: restart httpd
-        service:
-          name: httpd
-          state: restarted
+  handlers:
+  - name: restart httpd
+    service:
+      name: httpd
+      state: restarted
 ```
 
 El fichero de configuración sería: 
@@ -372,11 +381,11 @@ https://docs.ansible.com/ansible/latest/modules/import_playbook_module.html
 ```
 # check-status.yml
 ---
-  - hosts: webservers:loadbalancer
-    become: true
-    tasks:
-      - name: Check status of apache
-        command: service httpd status
+- hosts: webservers:loadbalancer
+  become: true
+  tasks:
+  - name: Check status of apache
+    command: service httpd status
 ```
 
 ## Uso de Variables 
@@ -396,30 +405,30 @@ En el siguiente ejemplo, se amplia nuestra App con un nuevo fichero info.php inc
 # setup-app.yml
 
 ---
-  - hosts: webservers
-    become: true
-    tasks:
-      - name: Upload application file
-        copy:
-          src: app/index.php
-          dest: /var/www/html
-          mode: 0755
+- hosts: webservers
+  become: true
+  tasks:
+  - name: Upload application file
+    copy:
+      src: app/index.php
+      dest: /var/www/html
+      mode: 0755
 
-      - name: Incluir info.php a la App
-        copy: 
-          dest: /var/www/html
-          content: "<h1>{{ ansible_hostname }}</h1>"
+  - name: Incluir info.php a la App
+    copy: 
+      dest: /var/www/html
+      content: "<h1>{{ ansible_hostname }}</h1>"
       
-      - name: Configure php.ini file
-        lineinfile:
-          path: /etc/php.ini
-          regexp: ^short_open_tag
-          line: 'short_open_tag=On'
-        notify: restart apache
+  - name: Configure php.ini file
+    lineinfile:
+      path: /etc/php.ini
+      regexp: ^short_open_tag
+      line: 'short_open_tag=On'
+    notify: restart apache
 
-    handlers:
-      - name: restart apache
-        service: name=httpd state=restarted
+  handlers:
+  - name: restart apache
+    service: name=httpd state=restarted
 ```
 
 
