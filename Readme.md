@@ -3,11 +3,13 @@
 
 ### Crear un fichero de inventario: hosts-dev
 
+https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html
+
 ```
 # Por defecto /etc/ansible/hosts
 # Podemos usar otro con -i <inventario>
 
-# hosts-dev
+# hosts
 
 [webservers]
 3.228.178.191
@@ -21,7 +23,7 @@
 control ansible_connection=local
 ```
 
-### Listar los hosts
+#### Listar los hosts
 
 ```
 $ ansible all -i hosts-dev --list-hosts
@@ -33,6 +35,8 @@ $ ansible all -i hosts-dev --list-hosts
 ```
 
 ### Configuración de Ansible
+
+https://docs.ansible.com/ansible/latest/reference_appendices/config.html
 
 La configuración se busca en el siguiente orden:
 
@@ -47,7 +51,9 @@ Crear el fichero ansible.cfg
 # ansible.cfg
 
 [defaults]
-inventory = ./hosts-env
+inventory = ./hosts
+remote_user = ubuntu
+private_key_file =  ./labsuser.pem
 ```
 
 ```
@@ -164,7 +170,7 @@ non-zero return code
 
 
 ## Playbooks
-Documentación: https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html
+https://docs.ansible.com/ansible/latest/user_guide/playbooks_intro.html
 
 Playbooks (libro de jugadas, lista de la compra o receta) es un script que incluye las intrucciones para gestionar la configuración de nuestros sistemas remotos
 
@@ -202,7 +208,7 @@ $ ansible-playbook ping.yml
 - Configurar infraestructura: copiar (con el módulo copy) y sincronizar ficheros (con el módulo synchronize).
 - Gestionar servicios: configurarlo con el módulo lineinfile e iniciarlos, pararlos o restaurarlo con el módulo service
 
-- Gestión de paquetes
+#### Gestión de paquetes
 
 ```
 # yum-update.yml
@@ -216,7 +222,7 @@ $ ansible-playbook ping.yml
     yum: name=* state=latest
 ```
 
-- Gestionar servicios
+#### Gestionar servicios
 
 ```
 # install-services.yml
@@ -245,7 +251,7 @@ $ ansible-playbook ping.yml
     service: name=httpd state=started enabled=yes
 ```
 
-- Instanlación y configuración de la Aplicación
+#### Instanlación y configuración de la Aplicación
 
 ```
 # setup-app.yml
