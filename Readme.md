@@ -1,7 +1,7 @@
 ## Ansible
 
 
-### Crear un fichero de inventario: hosts-dev
+### Crear un fichero de inventario: hosts
 
 https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html
 
@@ -9,9 +9,9 @@ https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html
 # Por defecto /etc/ansible/hosts
 # Podemos usar otro con -i <inventario>
 
-# hosts
+# ./hosts
 
-[webservers]
+[webserver]
 3.228.178.191
 3.232.218.105
 
@@ -19,14 +19,12 @@ https://docs.ansible.com/ansible/latest/inventory_guide/intro_inventory.html
 [loadbalancer]
 34.235.19.16
 
-[local]
-control ansible_connection=local
 ```
 
 #### Listar los hosts
 
 ```
-$ ansible all -i hosts-dev --list-hosts
+$ ansible all -i hosts --list-hosts
   hosts (4):
     control
     3.228.178.191
@@ -52,7 +50,7 @@ Crear el fichero ansible.cfg
 
 [defaults]
 inventory = ./hosts
-remote_user = ubuntu
+remote_user = ec2_user
 private_key_file =  ./labsuser.pem
 ```
 
@@ -67,9 +65,9 @@ ansible-user@IND004513:~/ansible$ ansible --list-hosts all
 ### Asignando nombre (Hostname DNS) a los hosts
 
 ```
-# hosts-dev
+# ./hosts
 
-[webservers]
+[webserver]
 webapp1 ansible_host=3.228.178.191
 webapp2 ansible_host=3.232.218.105
 
@@ -77,8 +75,7 @@ webapp2 ansible_host=3.232.218.105
 [loadbalancer]
 weblb ansible_host=34.235.19.16
 
-[local]
-control ansible_connection=local
+
 ```
 Es posible utilizar patrones para seleccionar los hosts
 
@@ -215,7 +212,7 @@ $ ansible-playbook ping.yml
 
 ---
 - name: Update web a loadbalances
-  hosts: webservers:loadbalancer
+  hosts: webserver:loadbalancer
   become: true
   tasks:
   - name: Updating yum packages
@@ -232,18 +229,21 @@ $ ansible-playbook ping.yml
   hosts: loadbalancer
   become: true
   tasks:
-  - name: Installing apache
-    yum: name=httpd state=present
+
+  - name: Install the latest version of Apache
+    ansible.builtin.dnf:
+      name: httpd
+      state: present
   - name: Ensure apache starts
     service: name=httpd state=started enabled=yes
 
 - name: Install Apache and PHP on WebServers
-  hosts: webservers
+  hosts: webserver
   become: true
   tasks:
   - name: Installing services
-    yum:
-      name: 
+    ansible.builtin.dnf:
+      name:
       - httpd
       - php
       state: present
@@ -254,11 +254,11 @@ $ ansible-playbook ping.yml
 #### Instanlación y configuración de la Aplicación
 
 ```
-# setup-app.yml
+# deploy-app.yml
 
 ---
 - name: Upload App and Confgure PHP
-  hosts: webservers
+  hosts: webserver
   become: true
   tasks:
   - name: Upload application file
@@ -266,7 +266,7 @@ $ ansible-playbook ping.yml
       src: app/index.php
       dest: /var/www/html
       mode: 0755
-      
+
   - name: Configure php.ini file
     lineinfile:
       path: /etc/php.ini
@@ -277,38 +277,14 @@ $ ansible-playbook ping.yml
     service: name=httpd state=restarted
 ```
 
-Es posible definir un handler para que apache se restaure si hay algún cambio en la configuración:
+Es posible definir un handler para que apache se restaure si hay algún cambio en la configuración, se mostrará en el siguiente ejemplo.
 
-```
-# setup-app.yml
 
----
-- name: Upload App and Confgure PHP
-  hosts: webservers
-  become: true
-  tasks:
-  - name: Upload application file
-    copy:
-      src: app/index.php
-      dest: /var/www/html
-      mode: 0755
-      
-  - name: Configure php.ini file
-    lineinfile:
-      path: /etc/php.ini
-      regexp: ^short_open_tag
-      line: 'short_open_tag=On'
-      notify: restart apache
-  
-  handlers:
-  - name: restart apache
-    service: name=httpd state=restarted
-```
 
 - Configuración del balanceador
 
 ```
-  # setup-lb.yml
+# setup-lb.yml
 ---
 - name: Configure loadbalancer
   hosts: loadbalancer
@@ -316,13 +292,13 @@ Es posible definir un handler para que apache se restaure si hay algún cambio e
   tasks:
   - name: Creating template
     template:
-      src: config/lb-config.j2
+      src: config/lb.conf
       dest:  /etc/httpd/conf.d/lb.conf
       owner: bin
       group: wheel
       mode: 064
     notify: restart httpd
-    
+
   handlers:
   - name: restart httpd
     service:
@@ -349,7 +325,7 @@ ProxyPass /balancer-manager !
 ProxyPass / balancer://webcluster/
 ```
 
-Se podría utilizar Jinja para el contenido
+Se podría utilizar Jinja para generar el contenido de forma dinámica (programática)
 https://jinja.palletsprojects.com/en/2.11.x/
 
 ```
@@ -376,9 +352,9 @@ https://docs.ansible.com/ansible/latest/modules/import_playbook_module.html
 ```
 # all-playbooks.yml
 ---
-  - import_playbook: yum-update.yml
+  - import_playbook: dnf-update.yml
   - import_playbook: install-services.yml
-  - import_playbook: setup-app.yml
+  - import_playbook: deploy-app.yml
   - import_playbook: setup-lb.yml
 ```
 
@@ -387,11 +363,14 @@ https://docs.ansible.com/ansible/latest/modules/import_playbook_module.html
 ```
 # check-status.yml
 ---
-- hosts: webservers:loadbalancer
+- name: Services Status
+  hosts: webserver:loadbalancer
   become: true
   tasks:
   - name: Check status of apache
-    command: service httpd status
+    shell:
+      cmd: service httpd status
+      warn: False
 ```
 
 ## Uso de Variables 

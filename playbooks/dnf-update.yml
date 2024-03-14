@@ -1,0 +1,11 @@
+# dnf-update.yml
+
+---
+- name: Update webservers and loadbalancer
+  hosts: webserver:loadbalancer
+  become: true
+  tasks:
+  - name: Upgrade all packages
+    ansible.builtin.dnf:
+      name: "*"
+      state: latest
